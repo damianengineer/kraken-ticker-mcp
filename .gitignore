@@ -1,0 +1,136 @@
+# Sensitive files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+*.cert
+*.p12
+secrets.json
+credentials.json
+config.json
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Dependency directories
+node_modules/
+jspm_packages/
+bower_components/
+.pnp/
+.pnp.js
+
+# Build outputs
+dist/
+build/
+out/
+.output/
+.nuxt/
+.next/
+.cache/
+.parcel-cache/
+.docusaurus/
+
+# Coverage directory
+coverage/
+.nyc_output/
+lib-cov/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+.history/
+.atom/
+.buildlog/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Temporary files
+tmp/
+temp/
+.temp/
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# Example subdirectory - exclude from git tracking but allow access
+# example/
+# examples/
+
+# Instead, we'll use a .git/info/exclude approach for the example directory
+# This allows us to access the files while keeping them untracked locally
+
+# Python specific
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Java specific
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+target/
+.gradle/
+
+# Mobile development
+.expo/
+.expo-shared/
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+*.orig.*
+
+# Local netlify folder
+.netlify/
+
+# Yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.yarn-integrity
+
+# Misc
+.vercel
+.serverless/

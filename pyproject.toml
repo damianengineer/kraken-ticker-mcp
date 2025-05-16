@@ -1,0 +1,17 @@
+[project]
+name = "mcp-server-kraken"
+version = "0.1.0"
+description = "MCP server for retrieving ticker information from Kraken API"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["mcp>=1.0.0", "httpx>=0.24.0", "click>=8.0.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = ["pyright>=1.1.389", "pytest>=8.3.3", "ruff>=0.8.0"]
+
+[project.scripts]
+mcp-server-kraken = "mcp_server_kraken:main"
