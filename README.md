@@ -6,7 +6,7 @@
 
 This implementation was developed according to the following specifications and resources:
 
-- [**Model Context Protocol (MCP) Specification**](https://github.com/modelcontextprotocol/protocol) - The official protocol specification defining the standard interface for tool calling.
+- [**Model Context Protocol (MCP) Specification**](https://github.com/modelcontextprotocol/protocol/) - The official protocol specification defining the standard interface for tool calling.
 
 - [**MCP Python SDK**](https://github.com/modelcontextprotocol/python-sdk) - The Python implementation of the MCP protocol used in this project.
 
