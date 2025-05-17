@@ -5,10 +5,8 @@ from typing import Dict, List, Optional, Any
 import click
 import httpx
 import mcp.types as types
-from mcp.server import NotificationOptions, Server
-from mcp.server.models import InitializationOptions
+from mcp.server.fastmcp import FastMCP
 from mcp.shared.exceptions import McpError
-import mcp.server.stdio
 
 KRAKEN_API_BASE = "https://api.kraken.com/0/public/"
 
@@ -186,108 +184,75 @@ async def get_ticker_info(
         raise McpError(f"An error occurred: {str(e)}")
 
 
-async def serve() -> Server:
+# Create a FastMCP server with customizable settings
+mcp = FastMCP(
+    name="kraken",
+    # We'll set stateless_http in the main function based on CLI args
+    stateless_http=False
+)
+
+# We'll create and manage the HTTP client directly
+http_client = httpx.AsyncClient(base_url=KRAKEN_API_BASE)
+
+# Register the get_ticker prompt
+@mcp.prompt(
+    name="kraken-ticker",
+    description="Get ticker information for a trading pair from Kraken"
+)
+async def kraken_ticker_prompt(pair: str):
+    ticker_data = await get_ticker_info(http_client, pair)
+    return ticker_data.to_prompt_result()
+
+# Register the get_ticker tool
+@mcp.tool(
+    description="Get ticker information for a trading pair from Kraken"
+)
+async def get_ticker(pair: str) -> list[types.TextContent | types.ImageContent | types.EmbeddedResource]:
     """
-    Create and configure the MCP server with Kraken ticker tools and prompts.
+    Fetch ticker information from the Kraken API for the specified trading pair.
+    
+    Args:
+        pair: The trading pair to get information for (e.g., "BTCUSD", "ETHUSD")
+    
+    Returns:
+        Detailed ticker information
     """
-    server = Server("kraken")
-    http_client = httpx.AsyncClient(base_url=KRAKEN_API_BASE)
-
-    @server.list_prompts()
-    async def handle_list_prompts() -> list[types.Prompt]:
-        return [
-            types.Prompt(
-                name="kraken-ticker",
-                description="Get ticker information for a trading pair from Kraken",
-                arguments=[
-                    types.PromptArgument(
-                        name="pair",
-                        description="Trading pair (e.g., BTCUSD, ETHUSD)",
-                        required=True,
-                    )
-                ],
-            )
-        ]
-
-    @server.get_prompt()
-    async def handle_get_prompt(
-        name: str, arguments: dict[str, str] | None
-    ) -> types.GetPromptResult:
-        if name != "kraken-ticker":
-            raise ValueError(f"Unknown prompt: {name}")
-
-        if not arguments or "pair" not in arguments:
-            raise ValueError("Missing required argument: pair")
-
-        pair = arguments["pair"]
-        ticker_data = await get_ticker_info(http_client, pair)
-        return ticker_data.to_prompt_result()
-
-    @server.list_tools()
-    async def handle_list_tools() -> list[types.Tool]:
-        return [
-            types.Tool(
-                name="get_ticker",
-                description="Get ticker information for a trading pair from Kraken",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "pair": {
-                            "type": "string",
-                            "description": "Trading pair (e.g., BTCUSD, ETHUSD)"
-                        }
-                    },
-                    "required": ["pair"]
-                },
-            )
-        ]
-
-    @server.call_tool()
-    async def handle_call_tool(
-        name: str, arguments: dict[str, Any]
-    ) -> list[types.TextContent | types.ImageContent | types.EmbeddedResource]:
-        if name != "get_ticker":
-            raise ValueError(f"Unknown tool: {name}")
-
-        if "pair" not in arguments:
-            raise ValueError("Missing required argument: pair")
-
-        pair = arguments["pair"]
-        ticker_data = await get_ticker_info(http_client, pair)
-        return ticker_data.to_tool_result()
-
-    return server
+    ticker_data = await get_ticker_info(http_client, pair)
+    return ticker_data.to_tool_result()
 
 
 @click.command()
-def main():
+@click.option("--transport", default="streamable-http", 
+              type=click.Choice(["stdio", "streamable-http"]), 
+              help="Transport protocol to use (stdio or streamable-http)")
+@click.option("--host", default="localhost", help="Host for HTTP transport")
+@click.option("--port", default=8000, type=int, help="Port for HTTP transport")
+@click.option("--stateless", is_flag=True, default=False, help="Run in stateless mode")
+def main(transport, host, port, stateless):
     """Run the Kraken ticker MCP server."""
-    asyncio.run(run_server())
-
-
-async def run_server():
-    """Initialize and run the MCP server using stdio transport."""
-    server = await serve()
+    # Configure server options
+    if stateless:
+        mcp.stateless_http = True
+        
+    # Handle different transports
+    if transport == "streamable-http":
+        # Set host and port via environment variables
+        import os
+        os.environ["MCP_HOST"] = host
+        os.environ["MCP_PORT"] = str(port)
+        
+        print(f"Starting Kraken MCP server with streamable HTTP transport")
+        print(f"Server will be available at http://{host}:{port}/mcp")
+        print(f"Connect your MCP Inspector to http://{host}:{port}/mcp")
+    else:  # stdio
+        print("Starting Kraken MCP server with stdio transport")
+        print("Connect to this server using the MCP Inspector or Claude Desktop")
     
-    print("Starting Kraken MCP server with stdio transport")
-    print("Connect to this server using the MCP Inspector or Claude Desktop")
-    
-    async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-        await server.run(
-            read_stream,
-            write_stream,
-            InitializationOptions(
-                server_name="kraken",
-                server_version="0.1.0",
-                capabilities=server.get_capabilities(
-                    notification_options=NotificationOptions(
-                        tools_changed=True,
-                        prompts_changed=True
-                    ),
-                    experimental_capabilities={},
-                ),
-            ),
-        )
+    # Run with the specified transport and mount path for streamable-http
+    if transport == "streamable-http":
+        mcp.run(transport=transport, mount_path="/mcp")
+    else:
+        mcp.run(transport=transport)
 
 
 if __name__ == "__main__":

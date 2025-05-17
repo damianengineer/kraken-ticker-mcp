@@ -23,12 +23,22 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 FROM python:3.12-slim-bookworm
 
 WORKDIR /app
- 
+
+# Create app user for security
+RUN groupadd -r app && useradd -r -g app app
+
 COPY --from=uv --chown=app:app /app/.venv /app/.venv
 COPY --from=uv --chown=app:app /app/src /app/src
 
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Run the MCP server
-ENTRYPOINT ["mcp-server-kraken"]
+# Expose port 8000 for streamable HTTP
+EXPOSE 8000
+
+# Switch to non-root user
+USER app
+
+# Run the MCP server with streamable-http transport
+# and bind to all interfaces so it's accessible from outside the container
+ENTRYPOINT ["mcp-server-kraken", "--transport", "streamable-http", "--host", "0.0.0.0"]
